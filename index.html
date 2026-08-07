@@ -28,30 +28,36 @@
 
     <script>
         const targetText = "الحمد لله رب العالمين";
+        let recognition = null;
         
         function normalizeText(text) {
-            // اعراب ختم کر کے بنیادی حروف کو میچ کرنے کے لیے
             return text.replace(/[\u064B-\u0652]/g, "").trim();
         }
 
         function startRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert("آپ کا براؤزر Web Speech API کو سپورٹ نہیں کرتا۔ برائے مہربانی Google Chrome استعمال کریں۔");
+                alert("آپ کا براؤزر Web Speech API کو سپورٹ نہیں کرتا۔ Google Chrome استعمال کریں۔");
                 return;
             }
 
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'ar-SA'; // عربی زبان سیٹ کی گئی ہے
-            recognition.interimResults = false;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ar'; // عربی زبان
+            recognition.interimResults = true; // لائیو الفاظ دیکھنے کے لیے
+            recognition.continuous = false;
 
-            document.getElementById('status').innerText = "تلاوت سنی جا رہی ہے...";
+            document.getElementById('status').innerText = "🎙️ سن رہا ہوں... اب تلاوت کریں!";
+            document.getElementById('status').className = "status";
             document.getElementById('startBtn').disabled = true;
 
             recognition.start();
 
             recognition.onresult = function(event) {
-                const spokenText = event.results[0][0].transcript;
+                let spokenText = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    spokenText += event.results[i][0].transcript;
+                }
+                
                 document.getElementById('transcript').innerText = "آپ نے پڑھا: " + spokenText;
 
                 const cleanSpoken = normalizeText(spokenText);
@@ -64,11 +70,18 @@
                     document.getElementById('status').innerText = "❌ غلطی ہے! دوبارہ کوشش کریں۔";
                     document.getElementById('status').className = "status wrong";
                 }
+            };
+
+            recognition.onerror = function(event) {
+                if (event.error === 'no-speech') {
+                    document.getElementById('status').innerText = "کوئی آواز نہیں ملی، ذرا اونچی آواز میں بولیں۔";
+                } else {
+                    document.getElementById('status').innerText = "ایرر: " + event.error;
+                }
                 document.getElementById('startBtn').disabled = false;
             };
 
-            recognition.onerror = function() {
-                document.getElementById('status').innerText = "آواز نہیں سنی جا سکی، دوبارہ کوشش کریں۔";
+            recognition.onend = function() {
                 document.getElementById('startBtn').disabled = false;
             };
         }
