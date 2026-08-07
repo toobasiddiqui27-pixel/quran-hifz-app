@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Quran Hifz AI Teacher - Prototype</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #fdfbf7; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #1b4332; }
+        .quran-verse { font-size: 26px; color: #1b4332; margin: 20px 0; font-family: 'Amiri', serif; }
+        button { background: #2d6a4f; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 25px; cursor: pointer; }
+        button:disabled { background: #888; }
+        .status { margin-top: 15px; font-weight: bold; font-size: 18px; }
+        .correct { color: #2b9348; }
+        .wrong { color: #d90429; }
+        .transcript { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>قرآن حفظ اے آئی ٹیچر (پروٹو ٹائپ)</h1>
+        <p>نیچے دی گئی آیت کی تلاوت کریں:</p>
+        <div class="quran-verse" id="targetVerse">الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ</div>
+        <button id="startBtn" onclick="startRecognition()">🎙️ تلاوت شروع کریں</button>
+        <div class="status" id="status"></div>
+        <div class="transcript" id="transcript">آپ کی آواز یہاں ظاہر ہوگی...</div>
+    </div>
+
+    <script>
+        const targetText = "الحمد لله رب العالمين";
+        
+        function normalizeText(text) {
+            // اعراب ختم کر کے بنیادی حروف کو میچ کرنے کے لیے
+            return text.replace(/[\u064B-\u0652]/g, "").trim();
+        }
+
+        function startRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("آپ کا براؤزر Web Speech API کو سپورٹ نہیں کرتا۔ برائے مہربانی Google Chrome استعمال کریں۔");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA'; // عربی زبان سیٹ کی گئی ہے
+            recognition.interimResults = false;
+
+            document.getElementById('status').innerText = "تلاوت سنی جا رہی ہے...";
+            document.getElementById('startBtn').disabled = true;
+
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const spokenText = event.results[0][0].transcript;
+                document.getElementById('transcript').innerText = "آپ نے پڑھا: " + spokenText;
+
+                const cleanSpoken = normalizeText(spokenText);
+                const cleanTarget = normalizeText(targetText);
+
+                if (cleanSpoken.includes(cleanTarget) || cleanTarget.includes(cleanSpoken)) {
+                    document.getElementById('status').innerText = "✅ بالکل درست! ماشاء اللہ";
+                    document.getElementById('status').className = "status correct";
+                } else {
+                    document.getElementById('status').innerText = "❌ غلطی ہے! دوبارہ کوشش کریں۔";
+                    document.getElementById('status').className = "status wrong";
+                }
+                document.getElementById('startBtn').disabled = false;
+            };
+
+            recognition.onerror = function() {
+                document.getElementById('status').innerText = "آواز نہیں سنی جا سکی، دوبارہ کوشش کریں۔";
+                document.getElementById('startBtn').disabled = false;
+            };
+        }
+    </script>
+</body>
+</html>
